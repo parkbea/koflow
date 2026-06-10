@@ -1,0 +1,13 @@
+============================================
+ TeamDocs starting
+ DB   : file:E:/workspace/clpro3/data/teamdocs.db
+ PORT : 3000
+ URL  : http://localhost:3000
+============================================
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 70ms
+Press any key to continue . . . 

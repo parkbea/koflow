@@ -1,0 +1,120 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String        @id @default(cuid())
+  name        String
+  email       String        @unique
+  password    String        @default("") // (인증 미사용)
+  role        String        @default("member") // 직무/역할 (자유 텍스트)
+  team        String? // 소속 팀
+  capacity    Float         @default(1) // 가용 공수 (MM/월)
+  memo        String?
+  createdAt   DateTime      @default(now())
+  documents   Document[]
+  assignments Assignment[]
+  activities  ActivityLog[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  order     Int        @default(0)
+  documents Document[]
+}
+
+model Document {
+  id         String            @id @default(cuid())
+  title      String
+  content    String // JSON (Tiptap)
+  categoryId String?
+  category   Category?         @relation(fields: [categoryId], references: [id])
+  authorId   String
+  author     User              @relation(fields: [authorId], references: [id])
+  status     String            @default("draft") // draft | published
+  visibility String            @default("team") // team | private
+  version    Int               @default(1)
+  tags       String            @default("[]") // JSON array
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  histories  DocumentHistory[]
+}
+
+model DocumentHistory {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String
+  title      String   @default("")
+  version    Int
+  createdAt  DateTime @default(now())
+}
+
+// ── 프로젝트 포트폴리오 관리 (probis 포팅) ──────────────
+model Project {
+  id           String       @id @default(cuid())
+  type         String       @default("RFI") // RFI | RFP | 실행중인 프로젝트
+  name         String       @default("") // OpenProject 원제(일본어 등)
+  subtitle     String       @default("") // 한글 대표 표시명
+  remark       String       @default("") // 비고
+  client       String       @default("")
+  summary      String       @default("")
+  effort       Float        @default(0)
+  effortUnit   String       @default("MM") // MM | MW | MD
+  effortDetail String       @default("")
+  startDate    String? // YYYY-MM-DD
+  endDate      String? // YYYY-MM-DD
+  status       String       @default("대기") // 대기 | 진행중 | 개발완료 | 중지 | 보류 | 리젝
+  archived     Boolean      @default(false)
+  emailContent String       @default("")
+  opEpicUrl    String       @default("")
+  opEffortUrl  String       @default("")
+  opQaUrl      String       @default("")
+  opUserIds    String       @default("[]") // JSON array
+  order        Int          @default(0)
+  assignments  Assignment[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Assignment {
+  id         String  @id @default(cuid())
+  projectId  String
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id])
+  name       String  @default("") // 표시용 (비회원 직접 입력 허용)
+  role       String  @default("")
+  effort     Float   @default(1)
+  effortUnit String  @default("MM")
+}
+
+model PersonalEvent {
+  id        String   @id @default(cuid())
+  title     String
+  type      String   @default("개인") // 개인 | 휴가 | 출장 | 회의 | 기념일 | 기타
+  color     String   @default("#ec4899")
+  startDate String // YYYY-MM-DD
+  endDate   String? // YYYY-MM-DD
+  memo      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String // created | updated | deleted | viewed
+  target    String // document | project
+  targetId  String
+  createdAt DateTime @default(now())
+}

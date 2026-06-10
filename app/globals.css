@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 243 75% 59%; /* indigo-600 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 30% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 243 60% 96%;
+    --accent-foreground: 243 60% 30%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 243 75% 59%;
+    --radius: 0.65rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* 망분리: 외부 폰트 없이 OS 기본 폰트 스택 사용 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+      "맑은 고딕", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  code,
+  pre {
+    font-family: "Cascadia Code", "D2Coding", Consolas, "Courier New", monospace;
+  }
+}
+
+/* Tiptap 에디터/렌더 콘텐츠 기본 스타일 (prose 대체, 외부 플러그인 없음) */
+.tiptap-content {
+  @apply text-foreground leading-relaxed;
+}
+.tiptap-content h1 {
+  @apply text-2xl font-bold mt-6 mb-3;
+}
+.tiptap-content h2 {
+  @apply text-xl font-bold mt-5 mb-2;
+}
+.tiptap-content h3 {
+  @apply text-lg font-semibold mt-4 mb-2;
+}
+.tiptap-content p {
+  @apply my-2;
+}
+.tiptap-content ul {
+  @apply list-disc pl-6 my-2;
+}
+.tiptap-content ol {
+  @apply list-decimal pl-6 my-2;
+}
+.tiptap-content blockquote {
+  @apply border-l-4 border-border pl-4 italic text-muted-foreground my-3;
+}
+.tiptap-content pre {
+  @apply bg-slate-900 text-slate-50 rounded-md p-4 my-3 overflow-x-auto text-sm;
+}
+.tiptap-content code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm;
+}
+.tiptap-content pre code {
+  @apply bg-transparent p-0;
+}
+.tiptap-content img {
+  @apply max-w-full rounded-md my-3;
+}
+.tiptap-content a {
+  @apply text-primary underline;
+}
+.tiptap-content mark {
+  @apply bg-yellow-200 px-0.5 rounded;
+}
+
+/* lowlight(highlight.js) 토큰 색상 - 번들 포함, 외부 CSS 미사용 */
+.hljs-comment,
+.hljs-quote {
+  @apply text-slate-400;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in {
+  @apply text-sky-400;
+}
+.hljs-string,
+.hljs-attr {
+  @apply text-emerald-400;
+}
+.hljs-number,
+.hljs-literal {
+  @apply text-amber-400;
+}
+.hljs-title,
+.hljs-function {
+  @apply text-violet-400;
+}
