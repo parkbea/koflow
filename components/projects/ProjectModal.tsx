@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, DownloadCloud } from "lucide-react";
+import { Plus, Trash2, Sparkles, DownloadCloud, ExternalLink } from "lucide-react";
 import { analyzeEmail } from "@/lib/email";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
@@ -376,18 +376,9 @@ export function ProjectModal({
               <Textarea rows={2} value={f.effortDetail} onChange={(e) => set("effortDetail", e.target.value)} />
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Epic URL</Label>
-                <Input value={f.opEpicUrl} onChange={(e) => set("opEpicUrl", e.target.value)} placeholder="http://..." />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">공수 URL</Label>
-                <Input value={f.opEffortUrl} onChange={(e) => set("opEffortUrl", e.target.value)} placeholder="http://..." />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">QA URL</Label>
-                <Input value={f.opQaUrl} onChange={(e) => set("opQaUrl", e.target.value)} placeholder="http://..." />
-              </div>
+              <UrlField label="Epic URL" value={f.opEpicUrl} onChange={(v) => set("opEpicUrl", v)} />
+              <UrlField label="공수 URL" value={f.opEffortUrl} onChange={(v) => set("opEffortUrl", v)} />
+              <UrlField label="QA URL" value={f.opQaUrl} onChange={(v) => set("opQaUrl", v)} />
             </div>
           </div>
         </details>
@@ -427,5 +418,42 @@ export function ProjectModal({
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     </Modal>
+  );
+}
+
+// URL 입력 + "열기"(새 창) 링크. URL 이 있을 때만 링크 표시.
+function UrlField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const valid = /^https?:\/\//i.test(value.trim());
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{label}</Label>
+        {valid && (
+          <a
+            href={value.trim()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-0.5 text-xs font-medium text-primary hover:underline"
+            title="새 창으로 열기"
+          >
+            <ExternalLink className="h-3 w-3" />
+            열기
+          </a>
+        )}
+      </div>
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="http://..."
+      />
+    </div>
   );
 }

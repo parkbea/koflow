@@ -11,6 +11,7 @@ import {
   Archive,
   Search,
   FileBarChart,
+  RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -61,6 +62,8 @@ export function ProjectBoard({
 
   const [editing, setEditing] = useState<ProjectData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncTarget, setSyncTarget] = useState(""); // "" = 팀원 전체
   const [eventModal, setEventModal] = useState<{
     event: PersonalEventData | null;
     date: string;
@@ -163,6 +166,46 @@ export function ProjectBoard({
     [router]
   );
 
+  // OpenProject 동기화: 팀원(또는 선택한 직원)의 진행 중 work package 가져오기
+  const syncOpenProject = useCallback(async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/integrations/openproject/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(syncTarget ? { userId: syncTarget } : {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error ?? "동기화 실패");
+        return;
+      }
+      // 최신 프로젝트 목록 반영
+      const refreshed = await fetch("/api/projects").then((r) => r.json());
+      setProjects(
+        (refreshed as (ProjectData & { opUserIds: string })[]).map((p) => ({
+          ...p,
+          opUserIds: Array.isArray(p.opUserIds)
+            ? p.opUserIds
+            : safeIds(p.opUserIds),
+        }))
+      );
+      router.refresh();
+      alert(
+        `OpenProject 동기화 완료 — ${data.scope}\n` +
+          `· 가져온 작업: ${data.fetched}건 (범위 내 ${data.matched}건)\n` +
+          `· 신규 등록: ${data.created}건\n` +
+          `· 내용 수정: ${data.updated}건\n` +
+          `· 완료 처리: ${data.completed}건`
+      );
+    } catch {
+      alert("동기화 실패 — 관리 > 연동 설정과 네트워크를 확인하세요.");
+    } finally {
+      setSyncing(false);
+    }
+  }, [syncing, syncTarget, router]);
+
   function openNew() {
     setEditing(null);
     setModalOpen(true);
@@ -177,9 +220,10 @@ export function ProjectBoard({
       {/* 헤더 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">업무 보드</h1>
+          <h1 className="text-2xl font-bold tracking-tight">업무 보드</h1>
           <p className="text-sm text-muted-foreground">
-            진행 {active.length}건 · 완료 {archived.length}건
+            진행 <span className="font-semibold text-foreground">{active.length}</span>건
+            {" · "}완료 <span className="font-semibold text-foreground">{archived.length}</span>건
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -201,6 +245,30 @@ export function ProjectBoard({
               PPT
             </a>
           </div>
+          <div className="flex items-center overflow-hidden rounded-lg border border-slate-200 bg-white/80 shadow-sm">
+            <Select
+              value={syncTarget}
+              onChange={(e) => setSyncTarget(e.target.value)}
+              className="h-9 w-28 rounded-none border-0 bg-transparent text-xs shadow-none focus-visible:ring-0"
+              title="동기화할 직원 선택"
+            >
+              <option value="">팀원 전체</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </Select>
+            <button
+              onClick={syncOpenProject}
+              disabled={syncing}
+              title="OpenProject 의 진행 중 작업을 가져옵니다 (선택한 직원 또는 팀원 전체)"
+              className="flex h-9 items-center gap-2 border-l border-slate-200 px-3 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+              {syncing ? "동기화 중..." : "OP 동기화"}
+            </button>
+          </div>
           <Button variant="outline" onClick={() => setArchiveOpen(true)}>
             <Archive className="h-4 w-4" />
             보관함 {archived.length > 0 && `(${archived.length})`}
@@ -211,8 +279,8 @@ export function ProjectBoard({
         </div>
       </div>
 
-      {/* 뷰 탭 */}
-      <div className="flex items-center gap-1 border-b">
+      {/* 뷰 전환 — 세그먼트 컨트롤 */}
+      <div className="inline-flex items-center gap-1 rounded-xl bg-slate-200/70 p-1">
         {VIEWS.map((v) => {
           const Icon = v.icon;
           return (
@@ -220,10 +288,10 @@ export function ProjectBoard({
               key={v.key}
               onClick={() => setView(v.key)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-4 py-2 text-sm transition-colors",
+                "flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm transition-all",
                 view === v.key
-                  ? "border-primary font-medium text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-white font-semibold text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
               )}
             >
               <Icon className="h-4 w-4" />

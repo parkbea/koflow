@@ -64,10 +64,20 @@ export function analyzeEmail(text: string): EmailAnalysis {
   }
 
   // URL 종류 추정 (epic/effort/qa)
-  const pick = (kw: RegExp) => opUrls.find((u) => kw.test(u)) ?? "";
-  const opEpicUrl = pick(/epic|backlog|project/i);
-  const opEffortUrl = pick(/effort|cost|공수|estimate/i);
-  const opQaUrl = pick(/qa|test|quality/i);
+  // 1) 키워드로 우선 배정하고 해당 URL은 소비(중복 배정 방지)
+  // 2) 키워드로 못 채운 칸은 남은 URL을 순서대로 배정
+  //    → URL 에 effort/qa 같은 단어가 없어도 2·3번째 칸이 빈 채로 남지 않음
+  const remaining = [...opUrls];
+  const take = (kw: RegExp): string => {
+    const i = remaining.findIndex((u) => kw.test(u));
+    return i === -1 ? "" : remaining.splice(i, 1)[0];
+  };
+  let opEpicUrl = take(/epic|backlog|project/i);
+  let opEffortUrl = take(/effort|cost|공수|estimate/i);
+  let opQaUrl = take(/qa|test|quality/i);
+  if (!opEpicUrl) opEpicUrl = remaining.shift() ?? "";
+  if (!opEffortUrl) opEffortUrl = remaining.shift() ?? "";
+  if (!opQaUrl) opQaUrl = remaining.shift() ?? "";
 
   // 날짜 (가장 이른 것=시작, 가장 늦은 것=종료)
   const dates: string[] = [];

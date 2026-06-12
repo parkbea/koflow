@@ -23,7 +23,6 @@ export default async function NewDocPage({
                 content: "",
                 categoryId: searchParams.category,
                 tags: [],
-                status: "draft",
               }
             : undefined
         }

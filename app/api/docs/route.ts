@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       content: data.content,
       categoryId: data.categoryId || null,
       authorId: user.id,
-      status: data.status ?? "draft",
+      status: data.status ?? "published",
       visibility: data.visibility ?? "team",
       tags: JSON.stringify(data.tags ?? []),
     },

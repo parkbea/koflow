@@ -21,19 +21,16 @@ export function DocumentCard({ doc }: { doc: DocCardData }) {
   const tags = parseTags(doc.tags);
 
   return (
-    <Link href={`/docs/${doc.id}`}>
-      <Card className="h-full transition-colors hover:bg-accent">
+    <Link href={`/docs/${doc.id}`} className="group block h-full">
+      <Card className="h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-indigo-200 group-hover:shadow-lift">
         <CardContent className="space-y-2 p-4">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 font-medium">
-              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <div className="flex items-center gap-2.5 font-semibold">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500 transition-colors group-hover:bg-indigo-100">
+                <FileText className="h-4 w-4" />
+              </span>
               <span className="line-clamp-1">{doc.title}</span>
             </div>
-            {doc.status === "draft" && (
-              <Badge variant="secondary" className="shrink-0">
-                초안
-              </Badge>
-            )}
           </div>
 
           {preview && (

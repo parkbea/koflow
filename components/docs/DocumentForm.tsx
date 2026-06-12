@@ -28,7 +28,6 @@ export type DocFormInitial = {
   content: string;
   categoryId: string | null;
   tags: string[];
-  status: string;
 };
 
 export function DocumentForm({
@@ -55,7 +54,7 @@ export function DocumentForm({
     setTagInput("");
   }
 
-  async function save(status: "draft" | "published") {
+  async function save() {
     if (!title.trim()) {
       setError("제목을 입력하세요.");
       return;
@@ -68,7 +67,7 @@ export function DocumentForm({
         content,
         categoryId: categoryId || null,
         tags,
-        status,
+        status: "published", // 초안/발행 구분 없이 단일 저장
       };
       const res = await fetch(
         isEdit ? `/api/docs/${initial!.id}` : "/api/docs",
@@ -173,16 +172,8 @@ export function DocumentForm({
         >
           취소
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => save("draft")}
-          disabled={saving}
-        >
-          임시저장
-        </Button>
-        <Button type="button" onClick={() => save("published")} disabled={saving}>
-          {saving ? "저장 중..." : "발행"}
+        <Button type="button" onClick={() => save()} disabled={saving}>
+          {saving ? "저장 중..." : "저장"}
         </Button>
       </div>
     </div>

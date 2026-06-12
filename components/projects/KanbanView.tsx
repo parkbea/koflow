@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Maximize2, Minimize2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   PROJECT_TYPES,
   TYPE_LABEL,
   TYPE_BORDER,
+  TYPE_COLOR,
   STATUS_BADGE,
   displayName,
   dDay,
@@ -31,6 +32,7 @@ export function KanbanView({
 }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [focus, setFocus] = useState<string | null>(null);
 
   const q = search.trim().toLowerCase();
   const visible = projects.filter((p) => {
@@ -43,11 +45,14 @@ export function KanbanView({
     return ms && mf;
   });
 
+  const columns = focus ? PROJECT_TYPES.filter((t) => t === focus) : PROJECT_TYPES;
+
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {PROJECT_TYPES.map((type) => {
+    <div className={cn(focus ? "block" : "grid gap-4 md:grid-cols-3")}>
+      {columns.map((type) => {
         const list = visible.filter((p) => p.type === type);
         const total = projects.filter((p) => p.type === type).length;
+        const focused = focus === type;
         return (
           <div
             key={type}
@@ -65,18 +70,47 @@ export function KanbanView({
               setDragOver(null);
             }}
             className={cn(
-              "flex flex-col rounded-lg border bg-muted/30",
+              "flex flex-col rounded-xl border border-slate-200/70 bg-white/55 shadow-card backdrop-blur-sm transition-shadow",
               dragOver === type && "ring-2 ring-primary"
             )}
           >
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="font-semibold">{TYPE_LABEL[type]}</span>
-              <Badge variant="secondary">{total}</Badge>
+              <span className="flex items-center gap-2 font-semibold">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ background: TYPE_COLOR[type] }}
+                />
+                {TYPE_LABEL[type]}
+              </span>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{total}</Badge>
+                <button
+                  onClick={() => setFocus(focused ? null : type)}
+                  title={focused ? "원래 보기로" : "이 칸반만 크게 보기"}
+                  className="flex items-center gap-1 rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                >
+                  {focused ? (
+                    <>
+                      <Minimize2 className="h-4 w-4" />
+                      <span className="text-xs font-medium">닫기</span>
+                    </>
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex-1 space-y-2 px-3 pb-3">
+            <div
+              className={cn(
+                "flex-1 px-3 pb-3",
+                focused
+                  ? "grid content-start gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "space-y-2"
+              )}
+            >
               {list.length === 0 && (
-                <p className="select-none py-10 text-center text-xs text-slate-300">
-                  카드를 드래그하세요
+                <p className="select-none py-10 text-center text-xs text-slate-300 sm:col-span-full">
+                  {focused ? "카드가 없습니다" : "카드를 드래그하세요"}
                 </p>
               )}
               {list.map((p) => {
@@ -92,7 +126,7 @@ export function KanbanView({
                     }}
                     onClick={() => onEdit(p)}
                     className={cn(
-                      "cursor-pointer rounded-xl border border-l-4 bg-background p-3 shadow-sm transition-shadow hover:shadow",
+                      "cursor-pointer rounded-xl border border-l-4 bg-background p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift",
                       TYPE_BORDER[p.type],
                       dragId === p.id && "opacity-50"
                     )}
@@ -113,9 +147,9 @@ export function KanbanView({
 
                     {(p.opEpicUrl || p.opEffortUrl || p.opQaUrl) && (
                       <div className="mb-1.5 flex gap-1">
-                        {p.opEpicUrl && <OpTag label="Epic" cls="bg-blue-50 text-blue-500" />}
-                        {p.opEffortUrl && <OpTag label="공수" cls="bg-indigo-50 text-indigo-500" />}
-                        {p.opQaUrl && <OpTag label="QA" cls="bg-violet-50 text-violet-500" />}
+                        {p.opEpicUrl && <OpTag label="Epic" href={p.opEpicUrl} cls="bg-blue-50 text-blue-500 hover:bg-blue-100" />}
+                        {p.opEffortUrl && <OpTag label="공수" href={p.opEffortUrl} cls="bg-indigo-50 text-indigo-500 hover:bg-indigo-100" />}
+                        {p.opQaUrl && <OpTag label="QA" href={p.opQaUrl} cls="bg-violet-50 text-violet-500 hover:bg-violet-100" />}
                       </div>
                     )}
 
@@ -187,10 +221,28 @@ export function KanbanView({
   );
 }
 
-function OpTag({ label, cls }: { label: string; cls: string }) {
+function OpTag({
+  label,
+  href,
+  cls,
+}: {
+  label: string;
+  href: string;
+  cls: string;
+}) {
   return (
-    <span className={cn("rounded px-1.5 py-0.5 text-xs font-medium", cls)}>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      title={`OpenProject ${label} 새 창으로 열기`}
+      className={cn(
+        "rounded px-1.5 py-0.5 text-xs font-medium transition-colors",
+        cls
+      )}
+    >
       {label}
-    </span>
+    </a>
   );
 }

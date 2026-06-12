@@ -29,7 +29,6 @@ export default async function EditDocPage({
           content: doc.content,
           categoryId: doc.categoryId,
           tags: parseTags(doc.tags),
-          status: doc.status,
         }}
       />
     </div>

@@ -33,16 +33,9 @@ export default async function DocDetailPage({
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              {doc.status === "draft" ? (
-                <Badge variant="secondary">초안</Badge>
-              ) : (
-                <Badge>발행됨</Badge>
-              )}
-              {doc.visibility === "private" && (
-                <Badge variant="outline">비공개</Badge>
-              )}
-            </div>
+            {doc.visibility === "private" && (
+              <Badge variant="outline">비공개</Badge>
+            )}
             <h1 className="text-3xl font-bold">{doc.title}</h1>
           </div>
           <DocActions id={doc.id} />

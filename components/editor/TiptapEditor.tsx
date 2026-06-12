@@ -46,6 +46,27 @@ export function TiptapEditor({
         class:
           "tiptap-content min-h-[400px] rounded-b-md border border-t-0 bg-background px-4 py-3 focus:outline-none",
       },
+      // 캡처본 붙여넣기(Ctrl+V): 클립보드의 이미지를 업로드 후 삽입
+      handlePaste: (view, event) => {
+        const files = imageFilesFrom(event.clipboardData?.items);
+        if (files.length === 0) return false;
+        event.preventDefault();
+        insertUploaded(view, files);
+        return true;
+      },
+      // 캡처 파일 드래그앤드롭: 떨군 위치에 업로드 후 삽입
+      handleDrop: (view, event) => {
+        const files = Array.from(event.dataTransfer?.files ?? []).filter((f) =>
+          f.type.startsWith("image/")
+        );
+        if (files.length === 0) return false;
+        event.preventDefault();
+        const pos =
+          view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ??
+          view.state.selection.from;
+        insertUploaded(view, files, pos);
+        return true;
+      },
     },
     onUpdate: ({ editor }) => {
       onChange(JSON.stringify(editor.getJSON()));
@@ -55,16 +76,8 @@ export function TiptapEditor({
   const handleImage = useCallback(
     async (file: File) => {
       if (!editor) return;
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: "업로드 실패" }));
-        alert(error ?? "업로드 실패");
-        return;
-      }
-      const { url } = await res.json();
-      editor.chain().focus().setImage({ src: url }).run();
+      const url = await uploadImage(file);
+      if (url) editor.chain().focus().setImage({ src: url }).run();
     },
     [editor]
   );
@@ -95,6 +108,52 @@ export function TiptapEditor({
       />
     </div>
   );
+}
+
+/** 파일을 업로드하고 정적 URL 을 돌려준다. 실패 시 null. */
+async function uploadImage(file: File): Promise<string | null> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  if (!res.ok) {
+    const { error } = await res.json().catch(() => ({ error: "업로드 실패" }));
+    alert(error ?? "업로드 실패");
+    return null;
+  }
+  const { url } = await res.json();
+  return url as string;
+}
+
+/** 클립보드/드롭 항목에서 이미지 File 만 추려낸다. */
+function imageFilesFrom(items: DataTransferItemList | undefined): File[] {
+  const out: File[] = [];
+  for (const it of items ?? []) {
+    if (it.kind === "file" && it.type.startsWith("image/")) {
+      const f = it.getAsFile();
+      if (f) out.push(f);
+    }
+  }
+  return out;
+}
+
+/** 업로드 후 ProseMirror view 의 지정 위치(없으면 현재 선택)에 이미지 노드를 삽입. */
+function insertUploaded(
+  view: import("@tiptap/pm/view").EditorView,
+  files: File[],
+  pos?: number
+) {
+  let at = pos;
+  files.forEach(async (file) => {
+    const url = await uploadImage(file);
+    if (!url) return;
+    const node = view.state.schema.nodes.image.create({ src: url });
+    const tr =
+      at === undefined
+        ? view.state.tr.replaceSelectionWith(node)
+        : view.state.tr.insert(at, node);
+    view.dispatch(tr);
+    if (at !== undefined) at += node.nodeSize; // 여러 장이면 뒤이어 삽입
+  });
 }
 
 function safeParse(content: string) {

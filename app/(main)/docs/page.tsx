@@ -7,7 +7,7 @@ import { getCategoryTree } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = { category?: string; status?: string };
+type SearchParams = { category?: string };
 
 /** 선택된 카테고리 + 모든 하위 카테고리 id 목록 */
 function collectCategoryIds(
@@ -38,7 +38,7 @@ export default async function DocsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { category, status } = searchParams;
+  const { category } = searchParams;
 
   const tree = await getCategoryTree();
   let categoryName: string | null = null;
@@ -51,10 +51,7 @@ export default async function DocsPage({
   }
 
   const documents = await prisma.document.findMany({
-    where: {
-      ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
-      ...(status ? { status } : {}),
-    },
+    where: categoryIds ? { categoryId: { in: categoryIds } } : {},
     orderBy: { updatedAt: "desc" },
     include: { category: true, author: true },
   });
@@ -63,11 +60,11 @@ export default async function DocsPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold tracking-tight">
             {categoryName ?? "전체 문서"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            총 {documents.length}건
+            총 <span className="font-semibold text-foreground">{documents.length}</span>건
           </p>
         </div>
         <Link href="/docs/new" className={buttonVariants()}>
@@ -75,22 +72,8 @@ export default async function DocsPage({
         </Link>
       </div>
 
-      <div className="flex gap-2 text-sm">
-        <FilterLink href="/docs" active={!status && !category} label="전체" />
-        <FilterLink
-          href="/docs?status=published"
-          active={status === "published"}
-          label="발행됨"
-        />
-        <FilterLink
-          href="/docs?status=draft"
-          active={status === "draft"}
-          label="초안"
-        />
-      </div>
-
       {documents.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-16 text-center text-muted-foreground">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white/50 py-16 text-center text-muted-foreground">
           <p>문서가 없습니다.</p>
           <Link
             href="/docs/new"
@@ -107,28 +90,5 @@ export default async function DocsPage({
         </div>
       )}
     </div>
-  );
-}
-
-function FilterLink({
-  href,
-  active,
-  label,
-}: {
-  href: string;
-  active: boolean;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={
-        active
-          ? "rounded-full bg-primary px-3 py-1 text-primary-foreground"
-          : "rounded-full bg-secondary px-3 py-1 text-secondary-foreground hover:bg-accent"
-      }
-    >
-      {label}
-    </Link>
   );
 }
